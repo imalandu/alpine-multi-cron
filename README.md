@@ -13,4 +13,4 @@ docker run -it -e "JOB_0="# # # # # echo "This is a test cron job0""" \\
 
                -e "JOB_1="# # # # # echo "This is a test cron job1""" \
                
-               \<image name\>
+               <image name>
