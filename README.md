@@ -1,5 +1,5 @@
 # alpine-multi-cron
-Support cron list with docker alpine
+Support cron list with docker alpine. Work on alpine:3.8
 
 STDOUT ----> /proc/1/fd/1
 
