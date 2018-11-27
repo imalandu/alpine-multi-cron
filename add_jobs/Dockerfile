@@ -1,10 +1,9 @@
-FROM alpine-base:latest
+FROM alpine-base:v1
 COPY script/* /tmp/
 
 RUN mkdir /script && \
     mv /tmp/* /script/ && \
-    chmod +x /script/*
+    chmod +x /script/* && \
+    pip install aiohttp apscheduler
 
-ENTRYPOINT ["/script/entrypoint.sh"]
-
-CMD ["crond", "-f", "-l", "5"]
+ENTRYPOINT ["/usr/local/bin/python", "-u", "/script/entrypoint.py"]
