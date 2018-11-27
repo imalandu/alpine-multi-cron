@@ -2,11 +2,8 @@ FROM alpine:latest
 ENV PATH /usr/local/bin:$PATH
 ENV LANG C.UTF-8
 
-COPY entrypoint.sh /
-
 RUN chmod +x /entrypoint.sh && \
     apk add --no-cache ca-certificates && \
-    set -ex && \
     apk add --no-cache --virtual .fetch-deps gnupg tar xz && \
     wget -O python.tar.xz "https://www.python.org/ftp/python/3.7.1/Python-3.7.1.tar.xz" && \
     mkdir -p /usr/src/python && \
@@ -28,7 +25,7 @@ RUN chmod +x /entrypoint.sh && \
     | tr ',' '\n' | sort -u | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
     | xargs -rt apk add --no-cache --virtual .python-rundeps && \
     apk del .build-deps && \
-    find /usr/local -depth \(\(-type d -a \(-name test -o -name tests\)\) -o \(-type f -a \(-name '*.pyc' -o -name '*.pyo'\)\)\) -exec rm -rf '{}' + && \
+    find /usr/local -depth \( \( -type d -a \( -name test -o -name tests \) \) -o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \) -exec rm -rf '{}' + && \
     rm -rf /usr/src/python && \
     python3 --version && \
     cd /usr/local/bin && \
@@ -40,9 +37,5 @@ RUN chmod +x /entrypoint.sh && \
     wget -O get-pip.py 'https://bootstrap.pypa.io/get-pip.py' && \
     python get-pip.py --disable-pip-version-check --no-cache-dir "pip==18.1" && \
     pip --version && \
-    find /usr/local -depth \(\(-type d -a \(-name test -o -name tests\)\) -o \(-type f -a \(-name '*.pyc' -o -name '*.pyo'\)\) \) -exec rm -rf '{}' + && \
+    find /usr/local -depth \( \( -type d -a \( -name test -o -name tests \) \) -o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \) -exec rm -rf '{}' + && \
     rm -f get-pip.py
-
-ENTRYPOINT ["/entrypoint.sh"]
-
-CMD ["crond", "-f", "-l", "5"]
