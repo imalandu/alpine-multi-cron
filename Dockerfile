@@ -2,8 +2,7 @@ FROM alpine:latest
 ENV PATH /usr/local/bin:$PATH
 ENV LANG C.UTF-8
 
-RUN chmod +x /entrypoint.sh && \
-    apk add --no-cache ca-certificates && \
+RUN apk add --no-cache ca-certificates && \
     apk add --no-cache --virtual .fetch-deps gnupg tar xz && \
     wget -O python.tar.xz "https://www.python.org/ftp/python/3.7.1/Python-3.7.1.tar.xz" && \
     mkdir -p /usr/src/python && \
