@@ -32,20 +32,28 @@ def get_jobs():
     return job_list
 
 
-def build_job(job_command):
+def build_job(job_name, job_command):
+    job_start_time_ts = time.time()
+    job_start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(job_start_time_ts))
     run_command = os.popen(job_command).readlines()
     if run_command is not None:
-        messages = [x.strip("\n") for x in run_command]
+        messages = [m.strip("\n") for m in run_command]
     else:
         messages = None
-    print("{time} [{command}] {messages}".format(time=time.time(), command=job_command, messages=messages))
+    cost_time = format((time.time() - job_start_time_ts), '0.3f')
+    print("[{time}] [{name}: {command}] {messages} CostTime: {cost}s".format(time=job_start_time,
+                                                                            name=job_name,
+                                                                            command=job_command,
+                                                                            messages=messages,
+                                                                            cost=cost_time))
 
 
 if __name__ == '__main__':
     scheduler = AsyncIOScheduler()
     jobs = get_jobs()
     for j in jobs:
-        scheduler.add_job(func=build_job, args=[j['job_command']], name=j['job_name'],
+        job_args = [j['job_name'], j['job_command']]
+        scheduler.add_job(func=build_job, args=job_args, name=j['job_name'],
                           misfire_grace_time=3600,
                           trigger=IntervalTrigger(
                               weeks=j['job_trigger'].get("weeks", 0),
