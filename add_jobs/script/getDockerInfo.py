@@ -148,7 +148,7 @@ class GetDockerData(object):
     async def get_con_info(self, con_id, session):
         def trans_byte(byte):
             if float(byte) > 1024:
-                return "{}GB".format(float(byte) / 1024)
+                return "{}GB".format(float(byte) / 1024, '0.3f')
             else:
                 return "{}MB".format(byte)
         url = "{prefix}/containers/{con_id}/json".format(prefix=self._prefix, con_id=con_id)
@@ -159,7 +159,7 @@ class GetDockerData(object):
                 "service_name": con_env['MARATHON_APP_ID'],
                 "host_port": con_env['HOST'] + "_" + (con_env['PORT0'] if 'PORT0' in con_env else 'None'),
                 "cpu_limit": con_env['MARATHON_APP_RESOURCE_CPUS'],
-                "mem_limit": trans_byte(float(con_env['MARATHON_APP_RESOURCE_MEM'])),
+                "mem_limit": trans_byte(con_env['MARATHON_APP_RESOURCE_MEM']),
                 "host": self._host_info
             })
 
