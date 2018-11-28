@@ -146,20 +146,53 @@ class GetDockerData(object):
         return cons_id
 
     async def get_con_info(self, con_id, session):
-        def trans_byte(byte):
-            if float(byte) > 1024:
-                return "{}GB".format(float(byte) / 1024, '0.3f')
+        def trans_byte_cpu(byte):
+            if float(byte) < 1:
+                return float(byte)
             else:
-                return "{}MB".format(byte)
+                if "".format(int(float(byte))) == "".format(byte):
+                    return int(float(byte))
+                else:
+                    return float(byte)
+
+        def trans_byte_mem(byte):
+            if float(byte) >= 1024:
+                if float(byte) % 1024 == 0:
+                    return "{}GB".format(format(float(byte) / 1024, '0.0f'))
+                else:
+                    return "{}GB".format(format(float(byte) / 1024, '0.1f'))
+            else:
+                return "{}MB".format(format(float(byte), '0.0f'))
+
+        def get_env(con_env_info):
+            env_list = self.__utils(con_env_info['Config']['Env'])
+            if "MARATHON_APP_ID" in env_list:
+                sn = env_list['MARATHON_APP_ID']
+            else:
+                sn = env_list['MESOS_CONTAINER_NAME']
+            if "PORT0" in env_list:
+                hp = env_list['LIBPROCESS_IP'] + "_" + env_list['PORT0']
+            else:
+                hp = env_list['LIBPROCESS_IP'] + "_" + "None"
+            if "MARATHON_APP_RESOURCE_CPUS" in env_list:
+                cl = env_list['MARATHON_APP_RESOURCE_CPUS']
+            else:
+                cl = con_env_info['HostConfig']['CpuShares'] / 1024
+            if "MARATHON_APP_RESOURCE_MEM" in env_list:
+                ml = env_list['MARATHON_APP_RESOURCE_MEM']
+            else:
+                ml = con_env_info['HostConfig']['Memory'] / 1024 / 1024
+            return sn, hp, cl, ml
+
         url = "{prefix}/containers/{con_id}/json".format(prefix=self._prefix, con_id=con_id)
         con_info = await self.__http_client(url, session)
         if con_info[0] // 100 == 2:
-            con_env = self.__utils(con_info[1]['Config']['Env'])
+            service_name, host_port, cpu_limit, mem_limit = get_env(con_info[1])
             self._cons_info[con_id].update({
-                "service_name": con_env['MARATHON_APP_ID'],
-                "host_port": con_env['HOST'] + "_" + (con_env['PORT0'] if 'PORT0' in con_env else 'None'),
-                "cpu_limit": con_env['MARATHON_APP_RESOURCE_CPUS'],
-                "mem_limit": trans_byte(con_env['MARATHON_APP_RESOURCE_MEM']),
+                "service_name": service_name,
+                "host_port": host_port,
+                "cpu_limit": trans_byte_cpu(cpu_limit),
+                "mem_limit": trans_byte_mem(mem_limit),
                 "host": self._host_info
             })
 
