@@ -130,7 +130,7 @@ class GetDockerData(object):
 
     @staticmethod
     async def __http_client(url, session):
-        async with session.get(url) as resp:
+        async with session.get(url, timeout=10) as resp:
             return [resp.status, await resp.json()]
 
     async def get_cons(self, session):
@@ -150,7 +150,7 @@ class GetDockerData(object):
             if float(byte) < 1:
                 return float(byte)
             else:
-                if "".format(int(float(byte))) == "".format(byte):
+                if "{}".format(int(float(byte))) == "{}".format(byte):
                     return int(float(byte))
                 else:
                     return float(byte)
@@ -246,18 +246,18 @@ class PushEsData(object):
     async def _async_http(session, url, method, **kwargs):
         try:
             if method == 'post':
-                async with session.post(url, data=kwargs['data'], headers=kwargs['headers'], timeout=15) as resp:
+                async with session.post(url, data=kwargs['data'], headers=kwargs['headers'], timeout=10) as resp:
                     return [resp.status, await resp.json()]
             elif method == 'put':
-                async with session.put(url, data=kwargs['data'], headers=kwargs['headers'], timeout=15) as resp:
+                async with session.put(url, data=kwargs['data'], headers=kwargs['headers'], timeout=10) as resp:
                     return [resp.status, await resp.json()]
             elif method == 'head':
-                async with session.head(url, timeout=2) as resp:
-                    return [resp.status]
+                async with session.head(url, timeout=5) as resp:
+                    return [resp.status, None]
             else:
-                return [500]
+                return [405, None]
         except Exception as e:
-            print("PostMarathonTask Func async_http() Error Message: {}".format(e))
+            print("{} getDockerInfo Func async_http() Error Message: {}".format(time.time(), e))
 
     # 如果没有索引则创建，如果有则pass
     async def check_index_mapping(self, session):
@@ -276,12 +276,12 @@ class PushEsData(object):
                                           headers=ELK_MAPPING_HEADERS)
         try:
             index_status = await is_index()
-            if index_status[0] / 100 != 2:
+            if index_status[0] // 100 != 2:
                 return await create_index()
             else:
                 return [index_status[0], "Index 'marathon' is already exists."]
         except Exception as e:
-            print("PostMarathonTask {} Func es_index() Error Message: {}".format(self._env_name, e))
+            print("{} getDockerInfo {} Func es_index() Error Message: {}".format(time.time(), self._env_name, e))
 
     def _init_es_data(self):
         if isinstance(self._containers_stats, dict):
@@ -320,9 +320,8 @@ async def main(env_name):
 
 
 if __name__ == '__main__':
-    start_ts = time.time()
     if (len(sys.argv) - 1) != 1 or sys.argv[1] not in ["pro", "uat", "perf", "sit"]:
-        print("{} getDockerInfo parameter Error.".format(start_ts))
+        print("{} getDockerInfo parameter Error.".format(time.time()))
     else:
         try:
             loop = asyncio.get_event_loop()
@@ -330,16 +329,16 @@ if __name__ == '__main__':
             loop.run_until_complete(task)
             task_result = task.result()
             if task_result is not None:
-                if task_result[1][0] / 100 == 2:
+                if task_result[1][0] // 100 == 2:
                     if task_result[1][1]['errors']:
-                        print("{} getDockerInfo Push failed. [{}]".format(start_ts, task_result[0]))
+                        print("{} getDockerInfo Push failed. [{}]".format(time.time(), task_result[0]))
                         pass
                     else:
-                        print("{} getDockerInfo Push success. [{}]".format(start_ts, task_result[0]))
+                        print("{} getDockerInfo Push success. [{}]".format(time.time(), task_result[0]))
                 else:
-                    print("{} getDockerInfo Push failed. [Http Error Code({})]".format(start_ts, task_result[1][0]))
+                    print("{} getDockerInfo Push failed. [Http Error Code({})]".format(time.time(), task_result[1][0]))
             else:
-                print("{} getDockerInfo No Data to Push.".format(start_ts))
+                print("{} getDockerInfo No Data to Push.".format(time.time()))
         except Exception as ex:
-            print("{} getDockerInfo {}".format(start_ts, ex))
+            print("{} getDockerInfo {}".format(time.time(), ex))
 
